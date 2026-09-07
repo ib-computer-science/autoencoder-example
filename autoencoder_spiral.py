@@ -124,8 +124,65 @@ recon = recon_n.numpy() * std + mean
 # ----------------------------------------------------------------------
 # 4. Visualize
 # ----------------------------------------------------------------------
-fig, axes = plt.subplots(1, 2, figsize=(10.5, 5.2))
-ax_orig, ax_recon = axes
+def draw_network_diagram(ax, layer_sizes, max_nodes=6):
+    """Schematic of a fully-connected MLP. Layers wider than max_nodes are
+    drawn with a capped number of nodes (the true width is labeled below)
+    so the diagram stays legible."""
+    n_layers = len(layer_sizes)
+    bottleneck_idx = int(np.argmin(layer_sizes))
+    xs = np.linspace(0.0, 1.0, n_layers)
+
+    node_positions = []
+    for n in layer_sizes:
+        shown = min(n, max_nodes)
+        ys = np.linspace(-1, 1, shown) if shown > 1 else np.array([0.0])
+        node_positions.append(ys)
+
+    # connections, drawn first so nodes sit on top
+    for li in range(n_layers - 1):
+        for y0 in node_positions[li]:
+            for y1 in node_positions[li + 1]:
+                ax.plot(
+                    [xs[li], xs[li + 1]], [y0, y1],
+                    color=BASELINE, linewidth=0.5, alpha=0.4, zorder=1,
+                )
+
+    for li, n in enumerate(layer_sizes):
+        is_bottleneck = li == bottleneck_idx
+        is_endpoint = li in (0, n_layers - 1)
+        if is_bottleneck:
+            face, edge, size = SERIES_BLUE, SERIES_BLUE, 190
+        elif is_endpoint:
+            face, edge, size = SURFACE, INK_SECONDARY, 120
+        else:
+            face, edge, size = BASELINE, BASELINE, 95
+        ys = node_positions[li]
+        ax.scatter(
+            np.full_like(ys, xs[li]), ys, s=size, facecolor=face,
+            edgecolor=edge, linewidths=1.1, zorder=2,
+        )
+        ax.text(
+            xs[li], -1.32, str(n), ha="center", va="top", fontsize=8.5,
+            color=INK_SECONDARY,
+        )
+
+    role_labels = ["input", "hidden", "hidden", "bottleneck", "hidden", "hidden", "output"]
+    for li, role in enumerate(role_labels[:n_layers]):
+        ax.text(
+            xs[li], 1.32, role, ha="center", va="bottom", fontsize=7.5,
+            color=INK_MUTED, rotation=30, rotation_mode="anchor",
+        )
+
+    ax.set_xlim(-0.1, 1.1)
+    ax.set_ylim(-1.55, 1.75)
+    ax.axis("off")
+
+
+fig, axes = plt.subplots(1, 3, figsize=(15.5, 5.2), gridspec_kw={"width_ratios": [1.15, 1, 1]})
+ax_net, ax_orig, ax_recon = axes
+
+draw_network_diagram(ax_net, layer_sizes=[2, 16, 16, 1, 16, 16, 2])
+ax_net.set_title("Network architecture", color=INK_PRIMARY, fontsize=11, pad=18)
 
 t_norm = (t - T_MIN) / (T_MAX - T_MIN)
 

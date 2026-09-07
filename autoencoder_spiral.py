@@ -164,14 +164,14 @@ def draw_network_diagram(ax, layer_sizes, max_nodes=6):
             edgecolor=edge, linewidths=1.1, zorder=2,
         )
         ax.text(
-            xs[li], -1.32, str(n), ha="center", va="top", fontsize=8.5,
+            xs[li], -1.32, str(n), ha="center", va="top", fontsize=11,
             color=INK_SECONDARY,
         )
 
     role_labels = ["input", "hidden", "hidden", "bottleneck", "hidden", "hidden", "output"]
     for li, role in enumerate(role_labels[:n_layers]):
         ax.text(
-            xs[li], 1.32, role, ha="center", va="bottom", fontsize=7.5,
+            xs[li], 1.32, role, ha="center", va="bottom", fontsize=10,
             color=INK_MUTED, rotation=30, rotation_mode="anchor",
         )
 

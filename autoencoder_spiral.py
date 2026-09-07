@@ -72,22 +72,24 @@ data_t = torch.tensor(data_n, dtype=torch.float32)
 # ----------------------------------------------------------------------
 # 2. Model: MLP autoencoder, bottleneck width 1
 # ----------------------------------------------------------------------
+HIDDEN_WIDTH = 4
+
 class Autoencoder(nn.Module):
     def __init__(self):
         super().__init__()
         self.encoder = nn.Sequential(
-            nn.Linear(2, 16),
+            nn.Linear(2, HIDDEN_WIDTH),
             nn.SiLU(),
-            nn.Linear(16, 16),
+            nn.Linear(HIDDEN_WIDTH, HIDDEN_WIDTH),
             nn.SiLU(),
-            nn.Linear(16, 1),
+            nn.Linear(HIDDEN_WIDTH, 1),
         )
         self.decoder = nn.Sequential(
-            nn.Linear(1, 16),
+            nn.Linear(1, HIDDEN_WIDTH),
             nn.SiLU(),
-            nn.Linear(16, 16),
+            nn.Linear(HIDDEN_WIDTH, HIDDEN_WIDTH),
             nn.SiLU(),
-            nn.Linear(16, 2),
+            nn.Linear(HIDDEN_WIDTH, 2),
         )
 
     def forward(self, x):
@@ -181,7 +183,9 @@ def draw_network_diagram(ax, layer_sizes, max_nodes=6):
 fig, axes = plt.subplots(1, 3, figsize=(15.5, 5.2), gridspec_kw={"width_ratios": [1.15, 1, 1]})
 ax_net, ax_orig, ax_recon = axes
 
-draw_network_diagram(ax_net, layer_sizes=[2, 16, 16, 1, 16, 16, 2])
+draw_network_diagram(
+    ax_net, layer_sizes=[2, HIDDEN_WIDTH, HIDDEN_WIDTH, 1, HIDDEN_WIDTH, HIDDEN_WIDTH, 2]
+)
 ax_net.set_title("Network architecture", color=INK_PRIMARY, fontsize=11, pad=18)
 
 t_norm = (t - T_MIN) / (T_MAX - T_MIN)

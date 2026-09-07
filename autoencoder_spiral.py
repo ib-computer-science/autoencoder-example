@@ -3,9 +3,6 @@
 Visualizes:
   1. the original (jittered) spiral data
   2. the autoencoder's reconstruction of that data
-  3. how the single bottleneck value varies as you sweep along the
-     (noise-free) spiral, showing the network has learned a 1D
-     "arc-length" coordinate for the 2D manifold.
 """
 
 import numpy as np
@@ -64,21 +61,12 @@ x = x_clean + rng.normal(0, JITTER_STD, size=N)
 y = y_clean + rng.normal(0, JITTER_STD, size=N)
 data = np.stack([x, y], axis=1)
 
-# a noise-free trajectory swept smoothly along the spiral, used only to
-# probe the learned bottleneck (not for training)
-t_sweep = np.linspace(T_MIN, T_MAX, 800)
-sweep_clean = np.stack(
-    [A * t_sweep * np.cos(t_sweep), A * t_sweep * np.sin(t_sweep)], axis=1
-)
-
 # normalize using the training data's statistics
 mean = data.mean(axis=0)
 std = data.std(axis=0)
 data_n = (data - mean) / std
-sweep_n = (sweep_clean - mean) / std
 
 data_t = torch.tensor(data_n, dtype=torch.float32)
-sweep_t = torch.tensor(sweep_n, dtype=torch.float32)
 
 
 # ----------------------------------------------------------------------
@@ -125,21 +113,19 @@ for epoch in range(EPOCHS):
         print(f"epoch {epoch:5d}  mse {loss.item():.5f}")
 
 # ----------------------------------------------------------------------
-# 3. Evaluate: reconstruct the data, probe the bottleneck along the sweep
+# 3. Evaluate: reconstruct the data
 # ----------------------------------------------------------------------
 model.eval()
 with torch.no_grad():
     recon_n, z_data = model(data_t)
-    _, z_sweep = model(sweep_t)
 
 recon = recon_n.numpy() * std + mean
-z_sweep = z_sweep.numpy().ravel()
 
 # ----------------------------------------------------------------------
 # 4. Visualize
 # ----------------------------------------------------------------------
-fig, axes = plt.subplots(1, 3, figsize=(15.5, 5.2))
-ax_orig, ax_recon, ax_bottleneck = axes
+fig, axes = plt.subplots(1, 2, figsize=(10.5, 5.2))
+ax_orig, ax_recon = axes
 
 t_norm = (t - T_MIN) / (T_MAX - T_MIN)
 
@@ -155,7 +141,7 @@ ax_recon.scatter(
     data[:, 0], data[:, 1], c=BASELINE, s=10, alpha=0.5, linewidths=0,
     label="original",
 )
-sc = ax_recon.scatter(
+ax_recon.scatter(
     recon[:, 0], recon[:, 1], c=t_norm, cmap=SEQUENTIAL_BLUE, s=10, alpha=0.9,
     linewidths=0, label="reconstruction",
 )
@@ -173,31 +159,9 @@ for ax in (ax_orig, ax_recon):
     for spine in ax.spines.values():
         spine.set_visible(False)
 
-cbar = fig.colorbar(sc, ax=(ax_orig, ax_recon), fraction=0.035, pad=0.02)
-cbar.set_label("position along spiral (t, normalized)", color=INK_SECONDARY, fontsize=9)
-cbar.ax.tick_params(color=INK_MUTED, labelcolor=INK_MUTED)
-cbar.outline.set_visible(False)
-
-# Panel 3: bottleneck value while sweeping cleanly along the spiral
-ax_bottleneck.plot(t_sweep, z_sweep, color=SERIES_BLUE, linewidth=2)
-ax_bottleneck.set_title("Bottleneck value along the spiral", color=INK_PRIMARY, fontsize=11)
-ax_bottleneck.set_xlabel("t (position along spiral)", fontsize=9)
-ax_bottleneck.set_ylabel("bottleneck z", fontsize=9)
-ax_bottleneck.grid(True, linewidth=0.6)
-for spine in ax_bottleneck.spines.values():
-    spine.set_visible(False)
-
 fig.suptitle(
     "1D-bottleneck MLP autoencoder learning a jittered 2D spiral",
     color=INK_PRIMARY, fontsize=13, y=1.02,
-)
-fig.text(
-    0.5, -0.04,
-    "Reconstruction loss alone does not require the bottleneck to vary smoothly or\n"
-    "monotonically with position — only that it be invertible — so the network is free to\n"
-    "encode most of the spiral with a nearly flat code and concentrate the change in a\n"
-    "narrow region.",
-    ha="center", va="top", color=INK_MUTED, fontsize=8.5,
 )
 fig.tight_layout()
 fig.savefig("autoencoder_spiral.png", dpi=150, bbox_inches="tight")

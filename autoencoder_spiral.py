@@ -79,16 +79,16 @@ class Autoencoder(nn.Module):
         super().__init__()
         self.encoder = nn.Sequential(
             nn.Linear(2, HIDDEN_WIDTH),
-            nn.SiLU(),
+            nn.Tanh(),
             nn.Linear(HIDDEN_WIDTH, HIDDEN_WIDTH),
-            nn.SiLU(),
+            nn.Tanh(),
             nn.Linear(HIDDEN_WIDTH, 1),
         )
         self.decoder = nn.Sequential(
             nn.Linear(1, HIDDEN_WIDTH),
-            nn.SiLU(),
+            nn.Tanh(),
             nn.Linear(HIDDEN_WIDTH, HIDDEN_WIDTH),
-            nn.SiLU(),
+            nn.Tanh(),
             nn.Linear(HIDDEN_WIDTH, 2),
         )
 
